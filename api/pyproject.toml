@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llm-loadtest-api"
+version = "0.1.0"
+description = "LLM Loadtest API - FastAPI backend"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "WIGTN", email = "dev@wigtn.ai" }
+]
+keywords = ["llm", "loadtest", "benchmark", "api", "fastapi"]
+
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.0.0",
+    "httpx>=0.25.0",
+    "numpy>=1.24.0",
+    "openpyxl>=3.1.0",
+    "websockets>=12.0",
+    "structlog>=23.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.25.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/llm_loadtest_api"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
