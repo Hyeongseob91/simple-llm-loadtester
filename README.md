@@ -4,6 +4,9 @@
 
 vLLM, SGLang, Ollama 등 OpenAI-compatible API 서버의 부하 테스트를 수행하고, 결과를 Web 대시보드에서 시각화합니다.
 
+> **Note**: [llm-benchmark](../llm-benchmark) 프로젝트가 llm-loadtest로 통합되었습니다.
+> llm-benchmark 사용자는 [마이그레이션 가이드](../llm-benchmark/README.md#마이그레이션-가이드)를 참조하세요.
+
 ## 목차
 
 - [프로젝트 소개](#프로젝트-소개)
@@ -675,11 +678,28 @@ docker compose build web
 
 ## 향후 개발 방향
 
+### Phase 5: 인프라 추천 기능 (진행 예정)
+
+> **"이 서버가 동시 500명을 버티는가? 버티려면 H100 몇 장이 필요한가?"**
+
+```bash
+llm-loadtest recommend \
+  --server http://localhost:8000 \
+  --model qwen3-14b \
+  --peak-concurrency 500 \
+  --goodput-target 95
+
+# 출력: "NVIDIA H100 5장 필요합니다"
+```
+
+상세 PRD: [docs/prd-phase5-infra-recommend.md](docs/prd-phase5-infra-recommend.md)
+
 ### 단기 목표
 
 - [ ] Triton 어댑터 완성
 - [ ] Redis 캐싱 통합
 - [ ] Rate Limiting
+- [ ] **인프라 추천 기능** (Phase 5)
 
 ### 중기 목표
 
