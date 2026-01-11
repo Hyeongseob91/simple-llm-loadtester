@@ -307,8 +307,6 @@ Goodput: 87.0% (87/100 requests met SLO)
 
 > 벤치마크 현황을 한눈에 파악하고 빠르게 액션을 취할 수 있는 메인 화면
 
-![Dashboard](images/llm_loadtest_dashboard.png)
-
 #### 화면 구성
 
 | 영역 | 설명 |
@@ -330,8 +328,6 @@ Goodput: 87.0% (87/100 requests met SLO)
 ### 2. 새 벤치마크 (/benchmark/new)
 
 > 테스트 설정을 구성하고 벤치마크를 시작하는 페이지
-
-![New Benchmark](images/llm_loadtest_new_benchmark.png)
 
 #### 화면 구성
 
@@ -364,8 +360,6 @@ Goodput: 87.0% (87/100 requests met SLO)
 ### 3. 벤치마크 실행 중 (/benchmark/[id])
 
 > 테스트 진행 상황을 실시간으로 모니터링하는 화면
-
-![Benchmark Running](images/llm_loadtest_benchmark_running.png)
 
 #### 화면 구성
 
@@ -403,8 +397,6 @@ Goodput: 87.0% (87/100 requests met SLO)
 ### 4. 벤치마크 결과 (/benchmark/[id])
 
 > 완료된 벤치마크의 상세 결과를 분석하는 화면
-
-![Benchmark Result](images/llm_loadtest_benchmark_result.png)
 
 #### 화면 구성
 
