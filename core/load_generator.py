@@ -95,6 +95,7 @@ class LoadGenerator:
             "ttft_avg": sum(ttfts) / len(ttfts) if ttfts else 0,
             "ttft_p50": sorted(ttfts)[len(ttfts) // 2] if ttfts else 0,
             "throughput_current": total_tokens / elapsed if elapsed > 0 else 0,
+            "timestamp": time.time(),  # Unix timestamp for time-series charts
         }
 
     async def _run_concurrent_requests(

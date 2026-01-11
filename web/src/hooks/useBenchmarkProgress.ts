@@ -22,6 +22,7 @@ export interface PartialMetrics {
   ttft_avg: number;
   ttft_p50: number;
   throughput_current: number;
+  timestamp?: number;  // Unix timestamp for time-series charts
 }
 
 export interface BenchmarkProgress {

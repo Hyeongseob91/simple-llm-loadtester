@@ -3,7 +3,7 @@
 import asyncio
 import sys
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -90,7 +90,7 @@ class BenchmarkService:
 
         try:
             # Update status to running
-            self.db.update_status(run_id, "running", started_at=datetime.now())
+            self.db.update_status(run_id, "running", started_at=datetime.now(timezone.utc))
 
             # Create adapter
             adapter = AdapterFactory.create(

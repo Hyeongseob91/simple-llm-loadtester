@@ -3,11 +3,11 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { api, ConcurrencyResult } from "@/lib/api";
 import { MetricCard } from "@/components/metric-card";
 import { useBenchmarkProgress } from "@/hooks/useBenchmarkProgress";
-import { Gauge, Clock, Activity, AlertCircle, CheckCircle, Loader2, FileText } from "lucide-react";
+import { Gauge, Clock, Activity, AlertCircle, CheckCircle, Loader2, FileText, Zap, Timer } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -18,6 +18,14 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+
+// Time-series data point type
+interface TimeSeriesPoint {
+  time: string;
+  timestamp: number;
+  ttft: number;
+  throughput: number;
+}
 
 export default function BenchmarkResultPage() {
   const params = useParams();
@@ -65,6 +73,47 @@ export default function BenchmarkResultPage() {
 
     return () => clearInterval(interval);
   }, [isRunning, startedAt]);
+
+  // Real-time time-series data for running state
+  const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesPoint[]>([]);
+  const lastMetricsRef = useRef<{ ttft: number; throughput: number } | null>(null);
+
+  // Accumulate time-series data from progress updates
+  useEffect(() => {
+    if (!isRunning) {
+      setTimeSeriesData([]);
+      lastMetricsRef.current = null;
+      return;
+    }
+
+    if (progress?.metrics) {
+      const m = progress.metrics;
+      // Skip if metrics haven't changed
+      if (
+        lastMetricsRef.current &&
+        lastMetricsRef.current.ttft === m.ttft_avg &&
+        lastMetricsRef.current.throughput === m.throughput_current
+      ) {
+        return;
+      }
+
+      lastMetricsRef.current = { ttft: m.ttft_avg, throughput: m.throughput_current };
+
+      const now = new Date();
+      const newPoint: TimeSeriesPoint = {
+        time: now.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        timestamp: now.getTime(),
+        ttft: m.ttft_avg,
+        throughput: m.throughput_current,
+      };
+
+      setTimeSeriesData((prev) => {
+        const updated = [...prev, newPoint];
+        // Keep only last 60 points (rolling window)
+        return updated.slice(-60);
+      });
+    }
+  }, [isRunning, progress]);
 
   // 완료된 레벨 데이터 (API 결과)
   const completedChartData = useMemo(() => {
@@ -168,107 +217,233 @@ export default function BenchmarkResultPage() {
       {/* Running Progress Panel */}
       {isRunning && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          {/* Progress Bar */}
-          <div className="mb-6">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600 dark:text-gray-400">전체 진행률</span>
-              <span className="font-medium text-gray-900 dark:text-white">
-                {(progress?.overall_percent ?? 0).toFixed(0)}%
-              </span>
+          {/* Dual Progress Bars */}
+          <div className="space-y-4 mb-6">
+            {/* Overall Progress */}
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600 dark:text-gray-400">전체 진행률</span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {(progress?.overall_percent ?? 0).toFixed(0)}%
+                </span>
+              </div>
+              <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 transition-all duration-300"
+                  style={{ width: `${progress?.overall_percent ?? 0}%` }}
+                />
+              </div>
             </div>
-            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-600 transition-all duration-300"
-                style={{ width: `${progress?.overall_percent ?? 0}%` }}
-              />
+
+            {/* Level Progress */}
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-gray-600 dark:text-gray-400">
+                  레벨 진행률 (Level {(progress?.concurrency?.index ?? 0) + 1}/{progress?.concurrency?.total ?? "-"} - Concurrency {progress?.concurrency?.level ?? "-"})
+                </span>
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {(progress?.progress?.percent ?? 0).toFixed(0)}%
+                </span>
+              </div>
+              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-green-500 transition-all duration-300"
+                  style={{ width: `${progress?.progress?.percent ?? 0}%` }}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Stats Grid */}
+          {/* Current Metrics Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                현재 Concurrency
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <Activity className="h-3.5 w-3.5" />
+                Concurrency
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
                 {progress?.concurrency?.level ?? "-"}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Level {(progress?.concurrency?.index ?? 0) + 1} / {progress?.concurrency?.total ?? "-"}
+                {progress?.progress?.current ?? 0} / {progress?.progress?.total ?? "-"} 요청
               </div>
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                요청 수
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <Zap className="h-3.5 w-3.5" />
+                현재 Throughput
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {progress?.progress?.current ?? 0} / {progress?.progress?.total ?? "-"}
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {progress?.metrics?.throughput_current?.toFixed(1) ?? "-"}
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                현재 레벨 {progress?.progress?.percent?.toFixed(0) ?? 0}%
+                tok/s
               </div>
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <Timer className="h-3.5 w-3.5" />
+                평균 TTFT
+              </div>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {progress?.metrics?.ttft_avg?.toFixed(0) ?? "-"}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                ms (진행 중)
+              </div>
+            </div>
+
+            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+              <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <Clock className="h-3.5 w-3.5" />
                 경과 시간
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {Math.floor(elapsed / 60)}:{(elapsed % 60).toString().padStart(2, '0')}
+                {Math.floor(elapsed / 60).toString().padStart(2, '0')}:{(elapsed % 60).toString().padStart(2, '0')}
               </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                분:초
-              </div>
-            </div>
-
-            <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                연결 상태
-              </div>
-              <div className={`text-2xl font-bold ${isConnected ? 'text-green-600' : 'text-yellow-600'}`}>
-                {isConnected ? "실시간" : "폴링"}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {isConnected ? "WebSocket 연결됨" : "HTTP 폴링 모드"}
+              <div className={`text-xs ${isConnected ? 'text-green-500' : 'text-yellow-500'}`}>
+                {isConnected ? "● 실시간 연결" : "○ 폴링 모드"}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Summary Cards - 항상 표시 (결과 없으면 Skeleton) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Best Throughput"
-          value={result?.summary?.best_throughput?.toFixed(1) ?? (isRunning ? "-" : "N/A")}
-          unit="tok/s"
-          icon={Gauge}
-          trend="up"
-        />
-        <MetricCard
-          title="Best TTFT (p50)"
-          value={result?.summary?.best_ttft_p50?.toFixed(1) ?? (isRunning ? "-" : "N/A")}
-          unit="ms"
-          icon={Clock}
-          trend="up"
-        />
-        <MetricCard
-          title="Best Concurrency"
-          value={result?.summary?.best_concurrency ?? (isRunning ? "-" : "N/A")}
-          icon={Activity}
-        />
-        <MetricCard
-          title="Error Rate"
-          value={result?.summary?.overall_error_rate?.toFixed(2) ?? (isRunning ? "-" : "0.00")}
-          unit="%"
-          icon={AlertCircle}
-          trend={(result?.summary?.overall_error_rate ?? 0) > 1 ? "down" : "up"}
-        />
-      </div>
+      {/* Real-time Time-Series Chart - Running 상태에서만 표시 */}
+      {isRunning && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              실시간 성능 추이
+            </h2>
+            <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded flex items-center gap-1">
+              <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              실시간 모니터링
+            </span>
+          </div>
+          <div className="h-64">
+            {timeSeriesData.length > 1 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={timeSeriesData}
+                  margin={{ top: 10, right: 80, left: 20, bottom: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
+                  <XAxis
+                    dataKey="time"
+                    tick={{ fontSize: 11 }}
+                    tickMargin={8}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fontSize: 11 }}
+                    tickMargin={8}
+                    label={{
+                      value: "Throughput (tok/s)",
+                      angle: -90,
+                      position: "insideLeft",
+                      style: { textAnchor: 'middle', fontSize: 11 }
+                    }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fontSize: 11 }}
+                    tickMargin={8}
+                    label={{
+                      value: "TTFT (ms)",
+                      angle: 90,
+                      position: "insideRight",
+                      style: { textAnchor: 'middle', fontSize: 11 }
+                    }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "rgb(31, 41, 55)",
+                      border: "1px solid rgb(55, 65, 81)",
+                      borderRadius: "0.5rem",
+                      color: "white",
+                      fontSize: 12,
+                    }}
+                    formatter={(value: number, name: string) => {
+                      if (name === "Throughput") return [`${value.toFixed(1)} tok/s`, name];
+                      return [`${value.toFixed(1)} ms`, name];
+                    }}
+                  />
+                  <Legend
+                    wrapperStyle={{ paddingTop: 10 }}
+                    iconType="line"
+                  />
+                  <Line
+                    yAxisId="left"
+                    type="monotone"
+                    dataKey="throughput"
+                    stroke="#2563eb"
+                    name="Throughput"
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="ttft"
+                    stroke="#10b981"
+                    name="TTFT"
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                <Loader2 className="h-8 w-8 animate-spin mb-3" />
+                <p className="text-sm">메트릭 수집 대기 중...</p>
+                <p className="text-xs mt-1">첫 번째 메트릭이 수신되면 차트가 표시됩니다</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
-      {/* Goodput Summary */}
-      {result?.summary?.avg_goodput_percent !== undefined && (
+      {/* Summary Cards - 완료 후에만 표시 (Running 중에는 숨김) */}
+      {!isRunning && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard
+            title="Best Throughput"
+            value={result?.summary?.best_throughput?.toFixed(1) ?? "N/A"}
+            unit="tok/s"
+            icon={Gauge}
+            trend="up"
+          />
+          <MetricCard
+            title="Best TTFT (p50)"
+            value={result?.summary?.best_ttft_p50?.toFixed(1) ?? "N/A"}
+            unit="ms"
+            icon={Clock}
+            trend="up"
+          />
+          <MetricCard
+            title="Best Concurrency"
+            value={result?.summary?.best_concurrency ?? "N/A"}
+            icon={Activity}
+          />
+          <MetricCard
+            title="Error Rate"
+            value={result?.summary?.overall_error_rate?.toFixed(2) ?? "0.00"}
+            unit="%"
+            icon={AlertCircle}
+            trend={(result?.summary?.overall_error_rate ?? 0) > 1 ? "down" : "up"}
+          />
+        </div>
+      )}
+
+      {/* Goodput Summary - 완료 후에만 표시 */}
+      {!isRunning && result?.summary?.avg_goodput_percent !== undefined && (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Goodput
@@ -284,20 +459,15 @@ export default function BenchmarkResultPage() {
         </div>
       )}
 
-      {/* Chart - 항상 표시 (Running 중 데이터 없으면 Skeleton) */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Throughput & Latency by Concurrency
-          </h2>
-          {isRunning && (
-            <span className="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">
-              {chartData.length > 0 ? "실시간 업데이트 중" : "데이터 수집 대기 중"}
-            </span>
-          )}
-        </div>
-        <div className="h-96">
-          {chartData.length > 0 ? (
+      {/* Chart - 완료 후에만 표시 */}
+      {!isRunning && chartData.length > 0 && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Throughput & Latency by Concurrency
+            </h2>
+          </div>
+          <div className="h-96">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={chartData}
@@ -340,15 +510,11 @@ export default function BenchmarkResultPage() {
                     color: "white",
                     fontSize: 12,
                   }}
-                  formatter={(value: number, name: string, props: { payload?: { isLive?: boolean } }) => {
-                    const suffix = props.payload?.isLive ? " (진행 중)" : "";
-                    if (name.includes("Throughput")) return [`${value.toFixed(1)} tok/s${suffix}`, name];
-                    return [`${value.toFixed(1)} ms${suffix}`, name];
+                  formatter={(value: number, name: string) => {
+                    if (name.includes("Throughput")) return [`${value.toFixed(1)} tok/s`, name];
+                    return [`${value.toFixed(1)} ms`, name];
                   }}
-                  labelFormatter={(label, payload) => {
-                    const isLive = payload?.[0]?.payload?.isLive;
-                    return `Concurrency: ${label}${isLive ? " (실시간)" : ""}`;
-                  }}
+                  labelFormatter={(label) => `Concurrency: ${label}`}
                 />
                 <Legend
                   wrapperStyle={{ paddingTop: 20 }}
@@ -361,14 +527,7 @@ export default function BenchmarkResultPage() {
                   stroke="#2563eb"
                   name="Throughput"
                   strokeWidth={2}
-                  dot={(props: { cx: number; cy: number; payload?: { isLive?: boolean } }) => {
-                    const { cx, cy, payload } = props;
-                    // 진행 중: 빈 원 (테두리만), 완료: 채워진 원
-                    if (payload?.isLive) {
-                      return <circle cx={cx} cy={cy} r={5} fill="white" stroke="#2563eb" strokeWidth={2} />;
-                    }
-                    return <circle cx={cx} cy={cy} r={5} fill="#2563eb" />;
-                  }}
+                  dot={{ r: 5, fill: "#2563eb" }}
                   activeDot={{ r: 7 }}
                 />
                 <Line
@@ -378,13 +537,7 @@ export default function BenchmarkResultPage() {
                   stroke="#10b981"
                   name="TTFT p50"
                   strokeWidth={2}
-                  dot={(props: { cx: number; cy: number; payload?: { isLive?: boolean } }) => {
-                    const { cx, cy, payload } = props;
-                    if (payload?.isLive) {
-                      return <circle cx={cx} cy={cy} r={5} fill="white" stroke="#10b981" strokeWidth={2} />;
-                    }
-                    return <circle cx={cx} cy={cy} r={5} fill="#10b981" />;
-                  }}
+                  dot={{ r: 5, fill: "#10b981" }}
                   activeDot={{ r: 7 }}
                 />
                 <Line
@@ -394,64 +547,32 @@ export default function BenchmarkResultPage() {
                   stroke="#f59e0b"
                   name="TTFT p99"
                   strokeWidth={2}
-                  dot={(props: { cx: number; cy: number; payload?: { isLive?: boolean } }) => {
-                    const { cx, cy, payload } = props;
-                    if (payload?.isLive) {
-                      return <circle cx={cx} cy={cy} r={5} fill="white" stroke="#f59e0b" strokeWidth={2} />;
-                    }
-                    return <circle cx={cx} cy={cy} r={5} fill="#f59e0b" />;
-                  }}
+                  dot={{ r: 5, fill: "#f59e0b" }}
                   activeDot={{ r: 7 }}
                 />
               </LineChart>
             </ResponsiveContainer>
-          ) : (
-            /* Skeleton Chart Placeholder */
-            <div className="h-full flex flex-col">
-              <div className="flex-1 flex items-end justify-around px-8 pb-8 gap-4">
-                {/* Skeleton bars */}
-                {[40, 60, 80, 70, 55, 45].map((height, i) => (
-                  <div key={i} className="flex flex-col items-center gap-2 flex-1">
-                    <div
-                      className="w-full bg-gray-200 dark:bg-gray-700 rounded-t animate-pulse"
-                      style={{ height: `${height}%` }}
-                    />
-                    <div className="w-8 h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                  </div>
-                ))}
-              </div>
-              {isRunning && (
-                <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
-                  첫 번째 Concurrency 레벨 완료 시 차트가 표시됩니다
-                </div>
-              )}
-            </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Results Table - 항상 표시 (Running 중 데이터 없으면 Skeleton) */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            상세 결과
-          </h2>
-          <div className="flex items-center gap-3">
-            {isRunning && (
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                {result?.results?.length ?? 0}개 레벨 완료
-              </span>
-            )}
-            {!isRunning && result?.results && result.results.length > 0 && (
-              <Link
-                href={`/benchmark/${runId}/analysis`}
-                className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-              >
-                <FileText className="h-4 w-4" />
-                AI 분석 보고서 →
-              </Link>
-            )}
+      {/* Results Table - 완료 후에만 표시 */}
+      {!isRunning && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              상세 결과
+            </h2>
+            <div className="flex items-center gap-3">
+              {result?.results && result.results.length > 0 && (
+                <Link
+                  href={`/benchmark/${runId}/analysis`}
+                  className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                >
+                  <FileText className="h-4 w-4" />
+                  AI 분석 보고서 →
+                </Link>
+              )}
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -467,66 +588,33 @@ export default function BenchmarkResultPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {result?.results && result.results.length > 0 ? (
-                result.results.map((r: ConcurrencyResult) => (
-                  <tr key={r.concurrency} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                      {r.concurrency}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                      {r.throughput_tokens_per_sec.toFixed(1)} tok/s
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                      {r.ttft.p50.toFixed(1)} ms
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                      {r.ttft.p99.toFixed(1)} ms
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                      {r.error_rate_percent.toFixed(2)}%
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
-                      {r.goodput ? `${r.goodput.goodput_percent.toFixed(1)}%` : "-"}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                /* Skeleton Table Rows */
-                [...Array(4)].map((_, i) => (
-                  <tr key={i}>
-                    <td className="px-4 py-3">
-                      <div className="h-5 w-12 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-5 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-5 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-5 w-14 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="h-5 w-14 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-                    </td>
-                  </tr>
-                ))
-              )}
+              {result?.results?.map((r: ConcurrencyResult) => (
+                <tr key={r.concurrency} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
+                    {r.concurrency}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                    {r.throughput_tokens_per_sec.toFixed(1)} tok/s
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                    {r.ttft.p50.toFixed(1)} ms
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                    {r.ttft.p99.toFixed(1)} ms
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                    {r.error_rate_percent.toFixed(2)}%
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-400">
+                    {r.goodput ? `${r.goodput.goodput_percent.toFixed(1)}%` : "-"}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
-        {isRunning && (!result?.results || result.results.length === 0) && (
-          <div className="p-4 text-center border-t border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
-              테스트 결과가 여기에 순차적으로 표시됩니다
-            </p>
-          </div>
-        )}
       </div>
+      )}
     </div>
   );
 }
