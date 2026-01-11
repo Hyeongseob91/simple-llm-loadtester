@@ -73,6 +73,37 @@ mkdir -p .claude/memory
 2. 에러 발생 → Error Log 기록
 3. 세션 종료 전 → checkpoint.md 업데이트
 
+## 핵심 구현 노트
+
+### AI 분석 보고서 (benchmarks.py)
+
+**Thinking 모델 지원**:
+- `/no_think` 옵션: system prompt 맨 앞에 추가하여 thinking 모드 비활성화 시도
+- `</think>` 태그 감지: Qwen3-VL 등 thinking 모델의 추론 과정 필터링
+- 버퍼링 로직: 스트리밍 응답에서 `</think>` 이후 내용만 출력
+
+```python
+# 핵심 로직 (benchmarks.py:generate_analysis)
+if think_end_tag in buffer:
+    idx = buffer.find(think_end_tag)
+    remaining = buffer[idx + len(think_end_tag):].lstrip()
+    report_started = True
+```
+
+**프롬프트 구성** (`_build_analysis_prompt`):
+- 테이블 데이터에서 요약 통계 직접 계산 (summary 필드 의존 제거)
+- 전문용어 설명 규칙 포함 (TTFT, Throughput, Goodput 등)
+- 마크다운 헤딩으로 구조화된 보고서 형식 지정
+
+### 핵심 파일 경로
+
+| Task | Start Here |
+|------|------------|
+| 부하테스트 로직 | `core/load_generator.py` |
+| 메트릭 계산 | `core/metrics.py` |
+| AI 분석 보고서 | `api/src/llm_loadtest_api/routers/benchmarks.py:analyze_result` |
+| 인프라 추천 | `core/recommend.py` |
+
 ## 출처
 
 이 구성은 soundmind-ai-system 프로젝트의 .claude 폴더 구조를 참고하여 llm-loadtest에 맞게 커스터마이징되었습니다.

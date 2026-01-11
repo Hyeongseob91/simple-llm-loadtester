@@ -336,6 +336,20 @@ mkdir -p .claude/memory
 | 새 어댑터 추가 | `adapters/base.py` |
 | CLI 명령어 | `cli/src/llm_loadtest/commands/` |
 | API 엔드포인트 | `api/src/llm_loadtest_api/routers/` |
+| AI 분석 보고서 | `api/src/llm_loadtest_api/routers/benchmarks.py:analyze_result` |
+| 인프라 추천 | `core/recommend.py` |
+
+### AI 분석 보고서 구현 노트
+
+**Thinking 모델 지원** (`benchmarks.py:generate_analysis`):
+- `/no_think` 옵션: system prompt 맨 앞에 추가
+- `</think>` 태그 감지: Qwen3-VL 등 thinking 모델의 추론 과정 필터링
+- 버퍼링: 스트리밍 응답에서 `</think>` 이후 내용만 출력
+
+**프롬프트** (`_build_analysis_prompt`):
+- 테이블 데이터에서 요약 통계 직접 계산
+- 전문용어 설명 규칙 (TTFT, Throughput, Goodput 등)
+- 마크다운 헤딩으로 구조화
 
 ### 코드 스타일
 
