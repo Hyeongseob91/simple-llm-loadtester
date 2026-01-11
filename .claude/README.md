@@ -99,12 +99,13 @@ if think_end_tag in buffer:
 
 | Task | Start Here |
 |------|------------|
-| 부하테스트 로직 | `core/load_generator.py` |
-| 메트릭 계산 | `core/metrics.py` |
-| AI 분석 보고서 | `api/src/llm_loadtest_api/routers/benchmarks.py:analyze_result` |
-| 인프라 추천 | `core/recommend.py` |
-| 벤치마크 상세 페이지 | `web/src/app/benchmark/[id]/page.tsx` |
-| 실시간 진행률 훅 | `web/src/hooks/useBenchmarkProgress.ts` |
+| 부하테스트 로직 | `shared/core/load_generator.py` |
+| 메트릭 계산 | `shared/core/metrics.py` |
+| 인프라 추천 | `shared/core/recommend.py` |
+| 새 어댑터 추가 | `shared/adapters/base.py` |
+| AI 분석 보고서 | `services/api/src/llm_loadtest_api/routers/benchmarks.py:analyze_result` |
+| 벤치마크 상세 페이지 | `services/web/src/app/benchmark/[id]/page.tsx` |
+| 실시간 진행률 훅 | `services/web/src/hooks/useBenchmarkProgress.ts` |
 
 ### 벤치마크 페이지 UI 구조 (page.tsx)
 

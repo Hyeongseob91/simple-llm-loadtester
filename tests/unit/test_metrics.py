@@ -2,8 +2,8 @@
 
 import pytest
 
-from core.metrics import GoodputCalculator, MetricsCalculator
-from core.models import GoodputThresholds, RequestResult
+from shared.core.metrics import GoodputCalculator, MetricsCalculator
+from shared.core.models import GoodputThresholds, RequestResult
 
 
 class TestMetricsCalculator:

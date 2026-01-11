@@ -3,7 +3,7 @@
 import pytest
 from datetime import datetime
 
-from core.models import (
+from shared.core.models import (
     BenchmarkConfig,
     BenchmarkResult,
     ConcurrencyResult,

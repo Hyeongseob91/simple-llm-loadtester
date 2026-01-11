@@ -4,13 +4,16 @@
 
 vLLM 등 LLM 서버의 성능을 측정하는 부하테스트 도구입니다.
 
+### 폴더 구조 (MSA 스타일)
+
 | Component | Location | Description |
 |-----------|----------|-------------|
-| CLI | `cli/` | Click 기반 CLI 명령어 |
-| API | `api/` | FastAPI 백엔드 서버 |
-| Core | `core/` | 부하 생성, 메트릭 계산 핵심 로직 |
-| Web | `web/` | Next.js 대시보드 |
-| Adapters | `adapters/` | vLLM, Triton 등 백엔드 어댑터 |
+| CLI | `services/cli/` | typer 기반 CLI 명령어 |
+| API | `services/api/` | FastAPI 백엔드 서버 |
+| Web | `services/web/` | Next.js 대시보드 |
+| Core | `shared/core/` | 부하 생성, 메트릭 계산 핵심 로직 |
+| Adapters | `shared/adapters/` | vLLM, Triton 등 백엔드 어댑터 |
+| Database | `shared/database/` | SQLite 벤치마크 결과 저장 |
 
 ---
 
@@ -330,16 +333,17 @@ mkdir -p .claude/memory
 
 | Task | Start Here |
 |------|------------|
-| 부하테스트 로직 | `core/load_generator.py` |
-| 메트릭 계산 | `core/metrics.py` |
-| GPU 모니터링 | `core/gpu_monitor.py` |
-| 새 어댑터 추가 | `adapters/base.py` |
-| CLI 명령어 | `cli/src/llm_loadtest/commands/` |
-| API 엔드포인트 | `api/src/llm_loadtest_api/routers/` |
-| AI 분석 보고서 | `api/src/llm_loadtest_api/routers/benchmarks.py:analyze_result` |
-| 인프라 추천 | `core/recommend.py` |
-| 벤치마크 상세 페이지 | `web/src/app/benchmark/[id]/page.tsx` |
-| 실시간 진행률 훅 | `web/src/hooks/useBenchmarkProgress.ts` |
+| 부하테스트 로직 | `shared/core/load_generator.py` |
+| 메트릭 계산 | `shared/core/metrics.py` |
+| GPU 모니터링 | `shared/core/gpu_monitor.py` |
+| 인프라 추천 | `shared/core/recommend.py` |
+| 새 어댑터 추가 | `shared/adapters/base.py` |
+| 데이터베이스 | `shared/database/database.py` |
+| CLI 명령어 | `services/cli/src/llm_loadtest/commands/` |
+| API 엔드포인트 | `services/api/src/llm_loadtest_api/routers/` |
+| AI 분석 보고서 | `services/api/src/llm_loadtest_api/routers/benchmarks.py:analyze_result` |
+| 벤치마크 상세 페이지 | `services/web/src/app/benchmark/[id]/page.tsx` |
+| 실시간 진행률 훅 | `services/web/src/hooks/useBenchmarkProgress.ts` |
 
 ### 벤치마크 페이지 UI 구조
 
@@ -376,11 +380,11 @@ mkdir -p .claude/memory
 ### 테스트
 
 ```bash
-# 테스트 실행
+# 테스트 실행 (프로젝트 루트에서)
 pytest tests/ -v
 
 # 커버리지 포함
-pytest tests/ -v --cov=core --cov-report=term-missing
+pytest tests/ -v --cov=shared/core --cov-report=term-missing
 ```
 
 ---

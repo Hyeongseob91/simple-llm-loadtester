@@ -2,7 +2,7 @@
 
 import pytest
 
-from core.tokenizer import TokenCounter
+from shared.core.tokenizer import TokenCounter
 
 
 class TestTokenCounter:

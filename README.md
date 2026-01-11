@@ -905,44 +905,54 @@ llm-loadtest run --adapter triton --server http://localhost:8000 ...
 
 ```
 llm-loadtest/
-├── core/                      # 핵심 로직
-│   ├── load_generator.py      # asyncio 기반 부하 생성
-│   ├── metrics.py             # TTFT, TPOT, Goodput 계산
-│   ├── models.py              # Pydantic 데이터 모델
-│   ├── tokenizer.py           # tiktoken 토큰 카운팅
-│   └── gpu_monitor.py         # GPU 메트릭 수집
+├── services/                  # 서비스 그룹 (MSA 스타일)
+│   ├── api/                   # FastAPI 백엔드
+│   │   ├── src/llm_loadtest_api/
+│   │   │   ├── main.py        # FastAPI 앱
+│   │   │   ├── routers/       # REST/WebSocket 라우터
+│   │   │   ├── services/      # 비즈니스 로직
+│   │   │   ├── database.py    # SQLite 연결
+│   │   │   ├── auth.py        # API Key 인증
+│   │   │   └── logging_config.py  # structlog 설정
+│   │   └── Dockerfile
+│   │
+│   ├── cli/                   # CLI 도구
+│   │   └── src/llm_loadtest/
+│   │       ├── main.py        # typer 기반 CLI
+│   │       └── commands/      # run, recommend, info, gpu 명령어
+│   │
+│   └── web/                   # Next.js 대시보드
+│       ├── src/
+│       │   ├── app/           # App Router 페이지
+│       │   ├── components/    # React 컴포넌트
+│       │   ├── hooks/         # 커스텀 훅
+│       │   └── lib/           # API 클라이언트
+│       └── Dockerfile
 │
-├── adapters/                  # 서버 어댑터
-│   ├── base.py                # 추상 어댑터 인터페이스
-│   ├── openai_compat.py       # vLLM, SGLang, Ollama
-│   └── triton.py              # Triton Inference Server
+├── shared/                    # 공유 코드
+│   ├── core/                  # 핵심 로직
+│   │   ├── load_generator.py  # asyncio 기반 부하 생성
+│   │   ├── metrics.py         # TTFT, TPOT, Goodput 계산
+│   │   ├── models.py          # Pydantic 데이터 모델
+│   │   ├── tokenizer.py       # tiktoken 토큰 카운팅
+│   │   ├── gpu_monitor.py     # GPU 메트릭 수집
+│   │   └── recommend.py       # 인프라 추천 엔진
+│   │
+│   ├── adapters/              # 서버 어댑터
+│   │   ├── base.py            # 추상 어댑터 인터페이스
+│   │   ├── openai_compat.py   # vLLM, SGLang, Ollama
+│   │   └── triton.py          # Triton Inference Server
+│   │
+│   └── database/              # 데이터베이스
+│       └── database.py        # SQLite 벤치마크 결과 저장
 │
-├── cli/                       # CLI 도구
-│   └── src/llm_loadtest/
-│       ├── main.py            # typer 기반 CLI
-│       └── commands/          # run, info, gpu 명령어
+├── tests/                     # 통합 테스트
+│   ├── unit/                  # 단위 테스트
+│   └── integration/           # 통합 테스트
 │
-├── api/                       # FastAPI 백엔드
-│   └── src/llm_loadtest_api/
-│       ├── main.py            # FastAPI 앱
-│       ├── routers/           # REST/WebSocket 라우터
-│       ├── services/          # 비즈니스 로직
-│       ├── database.py        # SQLite 연결
-│       ├── auth.py            # API Key 인증
-│       └── logging_config.py  # structlog 설정
-│
-├── web/                       # Next.js 대시보드
-│   └── src/
-│       ├── app/               # App Router 페이지
-│       ├── components/        # React 컴포넌트
-│       ├── hooks/             # 커스텀 훅
-│       └── lib/               # API 클라이언트
-│
-├── docker/                    # Docker 설정
-│   ├── Dockerfile.api
-│   ├── Dockerfile.web
-│   └── docker-compose.yml
-│
+├── docs/                      # 문서
+├── .claude/                   # Claude Code 설정
+├── docker-compose.yml         # 오케스트레이션
 └── pyproject.toml             # 패키지 설정
 ```
 
@@ -958,12 +968,12 @@ pip install -e ".[dev]"
 llm-loadtest --help
 
 # API 개발
-cd api
+cd services/api
 pip install -e ".[dev]"
-PYTHONPATH=../. uvicorn llm_loadtest_api.main:app --reload --port 8085
+PYTHONPATH=../.. uvicorn llm_loadtest_api.main:app --reload --port 8085
 
 # Web 개발
-cd web
+cd services/web
 npm install
 npm run dev
 ```
@@ -971,14 +981,14 @@ npm run dev
 ### 테스트
 
 ```bash
-# CLI 테스트
+# 전체 테스트 (루트에서 실행)
 pytest tests/
 
 # API 테스트
-cd api && pytest tests/
+cd services/api && pytest tests/
 
 # Web 린트
-cd web && npm run lint
+cd services/web && npm run lint
 ```
 
 ### Docker 빌드

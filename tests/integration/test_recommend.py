@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import MagicMock, AsyncMock
 
-from core.models import (
+from shared.core.models import (
     ConcurrencyResult,
     GoodputResult,
     GoodputThresholds,
@@ -11,7 +11,7 @@ from core.models import (
     LatencyStats,
     WorkloadSpec,
 )
-from core.recommend import InfraRecommender
+from shared.core.recommend import InfraRecommender
 
 
 class TestInfraRecommender:
