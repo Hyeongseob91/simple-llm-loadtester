@@ -1,4 +1,4 @@
-# Simple LLM Loadtester
+# Simple LLM Tester
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -62,15 +62,15 @@ AI 기반 분석 보고서를 생성하여 인사이트와 권장 사항을 확�
 
 ```bash
 # 저장소 클론
-git clone https://github.com/Hyeongseob91/llm-loadtest.git
-cd llm-loadtest
+git clone https://github.com/Hyeongseob91/Simple-llm-tester.git
+cd Simple-llm-tester
 
 # 전체 서비스 시작
 docker compose up -d
 
-# 접속
-# - Web UI: http://localhost:5050
-# - API Docs: http://localhost:8085/docs
+# 접속 (<your-host>를 설치한 서버 IP 또는 도메인으로 변경)
+# - Web UI: http://<your-host>:5050
+# - API Docs: http://<your-host>:8085/docs
 ```
 
 ### CLI 설치
@@ -80,16 +80,18 @@ docker compose up -d
 pip install -e .
 
 # 기본 부하 테스트
+# <your-llm-server>: 테스트할 LLM 서버 URL로 변경
+# <your-model>: LLM 서버에서 서빙 중인 모델 이름으로 변경
 llm-loadtest run \
-  --server http://localhost:8000 \
-  --model qwen3-14b \
+  --server http://<your-llm-server> \
+  --model <your-model> \
   --concurrency 1,10,50 \
   --num-prompts 100
 
 # Goodput 측정 (SLO 기반)
 llm-loadtest run \
-  --server http://localhost:8000 \
-  --model qwen3-14b \
+  --server http://<your-llm-server> \
+  --model <your-model> \
   --concurrency 50 \
   --goodput ttft:500,tpot:50
 ```
@@ -172,8 +174,8 @@ SLO(Service Level Objective) 임계값을 모두 만족하는 요청의 비율�
 ```bash
 # Goodput 측정 예시
 llm-loadtest run \
-  --server http://localhost:8000 \
-  --model qwen3-14b \
+  --server http://<your-llm-server> \
+  --model <your-model> \
   --goodput ttft:500,tpot:50,e2e:5000
 ```
 
@@ -210,9 +212,11 @@ OpenAI-compatible API (`/v1/chat/completions`)를 제공하는 서버라면 대�
 
 ```bash
 # 부하 테스트
+# --server: LLM 서버 URL (예: vLLM, SGLang, Ollama)
+# --model: 서빙 중인 모델 이름 (서버에서 확인)
 llm-loadtest run \
-  --server http://localhost:8000 \
-  --model qwen3-14b \
+  --server http://<your-llm-server> \
+  --model <your-model> \
   --concurrency 1,10,50,100 \
   --num-prompts 100 \
   --input-len 256 \
@@ -222,8 +226,8 @@ llm-loadtest run \
 
 # 인프라 추천
 llm-loadtest recommend \
-  --server http://localhost:8000 \
-  --model qwen3-14b \
+  --server http://<your-llm-server> \
+  --model <your-model> \
   --peak-concurrency 500 \
   --ttft-target 500 \
   --goodput-target 95
@@ -239,7 +243,7 @@ llm-loadtest gpu
 
 ## API 엔드포인트
 
-**Base URL:** `http://localhost:8085/api/v1`
+**Base URL:** `http://<your-host>:8085/api/v1`
 
 | Method | Endpoint | 설명 |
 |--------|----------|------|

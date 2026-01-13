@@ -1,4 +1,4 @@
-# Simple LLM Loadtester
+# Simple LLM Tester
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
@@ -62,15 +62,15 @@ Generate AI-powered analysis reports with insights and recommendations.
 
 ```bash
 # Clone the repository
-git clone https://github.com/Hyeongseob91/llm-loadtest.git
-cd llm-loadtest
+git clone https://github.com/Hyeongseob91/Simple-llm-tester.git
+cd Simple-llm-tester
 
 # Start all services
 docker compose up -d
 
-# Access
-# - Web UI: http://localhost:5050
-# - API Docs: http://localhost:8085/docs
+# Access (replace <your-host> with your server IP or domain)
+# - Web UI: http://<your-host>:5050
+# - API Docs: http://<your-host>:8085/docs
 ```
 
 ### CLI Installation
@@ -80,16 +80,18 @@ docker compose up -d
 pip install -e .
 
 # Basic load test
+# Replace <your-llm-server> with the LLM server URL you want to test
+# Replace <your-model> with the model name served by your LLM server
 llm-loadtest run \
-  --server http://localhost:8000 \
-  --model qwen3-14b \
+  --server http://<your-llm-server> \
+  --model <your-model> \
   --concurrency 1,10,50 \
   --num-prompts 100
 
 # Goodput measurement (SLO-based)
 llm-loadtest run \
-  --server http://localhost:8000 \
-  --model qwen3-14b \
+  --server http://<your-llm-server> \
+  --model <your-model> \
   --concurrency 50 \
   --goodput ttft:500,tpot:50
 ```
@@ -172,8 +174,8 @@ Percentage of requests meeting all SLO (Service Level Objective) thresholds.
 ```bash
 # Goodput measurement example
 llm-loadtest run \
-  --server http://localhost:8000 \
-  --model qwen3-14b \
+  --server http://<your-llm-server> \
+  --model <your-model> \
   --goodput ttft:500,tpot:50,e2e:5000
 ```
 
@@ -210,9 +212,11 @@ Any server providing OpenAI-compatible API (`/v1/chat/completions`) is generally
 
 ```bash
 # Load test
+# --server: URL of your LLM server (e.g., vLLM, SGLang, Ollama)
+# --model: Model name being served (check your server for the exact name)
 llm-loadtest run \
-  --server http://localhost:8000 \
-  --model qwen3-14b \
+  --server http://<your-llm-server> \
+  --model <your-model> \
   --concurrency 1,10,50,100 \
   --num-prompts 100 \
   --input-len 256 \
@@ -222,8 +226,8 @@ llm-loadtest run \
 
 # Infrastructure recommendation
 llm-loadtest recommend \
-  --server http://localhost:8000 \
-  --model qwen3-14b \
+  --server http://<your-llm-server> \
+  --model <your-model> \
   --peak-concurrency 500 \
   --ttft-target 500 \
   --goodput-target 95
@@ -239,7 +243,7 @@ llm-loadtest gpu
 
 ## API Endpoints
 
-**Base URL:** `http://localhost:8085/api/v1`
+**Base URL:** `http://<your-host>:8085/api/v1`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
