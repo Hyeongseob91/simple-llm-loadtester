@@ -489,11 +489,11 @@ LANGUAGE_INSTRUCTIONS = {
     },
     "en": {
         "system": "You MUST write your entire response in English. Do not use Korean.",
-        "prompt_suffix": "\n\n**IMPORTANT: Write your entire analysis report in English. All section headings, explanations, and conclusions must be in English.**",
+        "prompt_suffix": "\n\n---\n\n**[LANGUAGE REQUIREMENT - CRITICAL]**\n\nYou MUST write the entire analysis report in **English**.\n- All section headings must be in English\n- All explanations and analysis must be in English\n- All conclusions and recommendations must be in English\n- Do NOT use Korean anywhere in your response\n\nThis is a strict requirement. Respond ONLY in English.",
     },
     "zh": {
-        "system": "你必须用中文撰写整个回复。不要使用韩语。",
-        "prompt_suffix": "\n\n**重要提示：请用中文撰写整个分析报告。所有章节标题、解释和结论都必须使用中文。**",
+        "system": "你必须用中文撰写整个回复。不要使用韩语或英语。",
+        "prompt_suffix": "\n\n---\n\n**[语言要求 - 重要]**\n\n你必须用**中文**撰写整个分析报告。\n- 所有章节标题必须使用中文\n- 所有解释和分析必须使用中文\n- 所有结论和建议必须使用中文\n- 不要在回复中使用韩语或英语\n\n这是严格的要求。请只用中文回复。",
     },
 }
 
