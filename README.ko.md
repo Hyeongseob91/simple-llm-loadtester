@@ -24,22 +24,22 @@ OpenAI-compatible API 서버의 부하 테스트를 수행하고, 결과를 Web 
 ### 1. 대시보드
 벤치마크 히스토리와 최근 실행 상태를 한눈에 확인합니다.
 
-<img src="assets/user_flow_dashboard.png" alt="대시보드" width="800"/>
+<img src="docs/images/user_flow_dashboard.png" alt="대시보드" width="800"/>
 
 ### 2. 새 벤치마크
 원하는 파라미터로 새 벤치마크를 설정하고 시작합니다.
 
-<img src="assets/user_flow_new_benchmark.png" alt="새 벤치마크" width="800"/>
+<img src="docs/images/user_flow_new_benchmark.png" alt="새 벤치마크" width="800"/>
 
 ### 3. 벤치마크 결과
 실시간 진행 상황을 모니터링하고 완료 후 상세 결과를 확인합니다.
 
-<img src="assets/user_flow_benchmark_result.png" alt="벤치마크 결과" width="800"/>
+<img src="docs/images/user_flow_benchmark_result.png" alt="벤치마크 결과" width="800"/>
 
 ### 4. AI 분석 보고서
 AI 기반 분석 보고서를 생성하여 인사이트와 권장 사항을 확인합니다.
 
-<img src="assets/user_flow_ai_analysis_report.png" alt="AI 분석 보고서" width="800"/>
+<img src="docs/images/user_flow_ai_analysis_report.png" alt="AI 분석 보고서" width="800"/>
 
 ---
 

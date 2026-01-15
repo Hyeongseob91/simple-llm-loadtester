@@ -7,9 +7,9 @@ from typing import Optional
 
 import pytest
 
-# Add project root to path
+# Add src directory to path
 project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / "src"))
 
 from shared.core.models import (
     BenchmarkConfig,

@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      PYTHONPATH: ${{ github.workspace }}
+      PYTHONPATH: ${{ github.workspace }}/src
 
     steps:
       - name: Checkout code
@@ -32,7 +32,7 @@ jobs:
       - name: Run linter
         run: |
           pip install ruff
-          ruff check shared/ services/cli/ --ignore E501
+          ruff check src/shared/ src/services/cli/ --ignore E501
         continue-on-error: true
 
       - name: Run tests
@@ -41,6 +41,6 @@ jobs:
       - name: Run tests with coverage
         run: |
           pytest tests/unit tests/integration \
-            --cov=shared/core \
+            --cov=src/shared/core \
             --cov-report=term-missing \
             --cov-fail-under=35

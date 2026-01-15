@@ -7,8 +7,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
-# Add project root to path
-project_root = Path(__file__).parent.parent.parent.parent.parent
+# Add src directory to path
+project_root = Path(__file__).parent.parent.parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from shared.core.load_generator import LoadGenerator

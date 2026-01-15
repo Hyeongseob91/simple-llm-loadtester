@@ -12,8 +12,8 @@ import sys
 from pathlib import Path
 
 project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-sys.path.insert(0, str(project_root / "services" / "api" / "src"))
+sys.path.insert(0, str(project_root / "src"))
+sys.path.insert(0, str(project_root / "src" / "services" / "api" / "src"))
 
 from llm_loadtest_api.main import create_app
 from llm_loadtest_api.routers import benchmarks

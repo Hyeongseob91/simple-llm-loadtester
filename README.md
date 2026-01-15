@@ -24,22 +24,22 @@ Comprehensive benchmarking system for vLLM, SGLang, Ollama, and other OpenAI-com
 ### 1. Dashboard
 View benchmark history and recent runs at a glance.
 
-<img src="assets/user_flow_dashboard.png" alt="Dashboard" width="800"/>
+<img src="docs/images/user_flow_dashboard.png" alt="Dashboard" width="800"/>
 
 ### 2. New Benchmark
 Configure and start a new benchmark with custom parameters.
 
-<img src="assets/user_flow_new_benchmark.png" alt="New Benchmark" width="800"/>
+<img src="docs/images/user_flow_new_benchmark.png" alt="New Benchmark" width="800"/>
 
 ### 3. Benchmark Result
 Monitor real-time progress and view detailed results after completion.
 
-<img src="assets/user_flow_benchmark_result.png" alt="Benchmark Result" width="800"/>
+<img src="docs/images/user_flow_benchmark_result.png" alt="Benchmark Result" width="800"/>
 
 ### 4. AI Analysis Report
 Generate AI-powered analysis reports with insights and recommendations.
 
-<img src="assets/user_flow_ai_analysis_report.png" alt="AI Analysis Report" width="800"/>
+<img src="docs/images/user_flow_ai_analysis_report.png" alt="AI Analysis Report" width="800"/>
 
 ---
 
