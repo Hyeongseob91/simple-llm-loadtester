@@ -130,7 +130,7 @@ class MetricsValidator:
 
         # Skip Docker initialization if docker_enabled is False
         if not self.docker_enabled:
-            self._emit_progress("init", "Docker validation disabled, Prometheus only", "running")
+            self._emit_progress("init", "Docker validation disabled, Prometheus only", "completed")
             logger.info("Docker validation disabled by user, using Prometheus only")
             return
 
@@ -147,11 +147,11 @@ class MetricsValidator:
             )
             self._docker_available = await self._docker_collector.check_docker_available()
             if self._docker_available:
-                self._emit_progress("init", "Docker log collection available", "running")
+                self._emit_progress("init", "Docker log collection ready", "completed")
             else:
                 self._emit_progress("init", "Docker log collection unavailable", "warning")
         else:
-            self._emit_progress("init", "No vLLM container detected", "warning")
+            self._emit_progress("init", "No vLLM container detected (Prometheus only)", "completed")
 
     async def collect_before(self) -> bool:
         """
@@ -170,7 +170,6 @@ class MetricsValidator:
             self._before_prometheus = await self._fetch_prometheus_metrics()
             prometheus_ok = self._before_prometheus is not None
             if prometheus_ok:
-                self._emit_progress("before", "Prometheus baseline collected", "running")
                 logger.info("Prometheus metrics snapshot (before) collected")
             else:
                 self._emit_progress("before", "Prometheus metrics unavailable", "warning")
@@ -182,11 +181,15 @@ class MetricsValidator:
         if self._docker_collector:
             self._emit_progress("before", "Starting Docker log collection...", "running")
             docker_ok = await self._docker_collector.collect_before()
-            if docker_ok:
-                self._emit_progress("before", "Docker log collection started", "running")
-                logger.info("Docker log collection started")
-            else:
+            if not docker_ok:
                 self._emit_progress("before", "Docker log collection failed", "warning")
+                logger.info("Docker log collection started")
+
+        # Emit completion status for before step
+        if prometheus_ok or docker_ok:
+            self._emit_progress("before", "Baseline metrics collected", "completed")
+        else:
+            self._emit_progress("before", "No metrics sources available", "warning")
 
         return prometheus_ok or docker_ok
 
@@ -206,13 +209,18 @@ class MetricsValidator:
             self._after_prometheus = await self._fetch_prometheus_metrics()
             prometheus_ok = self._after_prometheus is not None
             if prometheus_ok:
-                self._emit_progress("after", "Prometheus final snapshot collected", "running")
                 logger.info("Prometheus metrics snapshot (after) collected")
             else:
                 self._emit_progress("after", "Prometheus metrics unavailable", "warning")
         except Exception as e:
             self._emit_progress("after", f"Prometheus error: {str(e)[:50]}", "warning")
             logger.warning(f"Failed to collect Prometheus metrics: {e}")
+
+        # Emit completion status for after step
+        if prometheus_ok:
+            self._emit_progress("after", "Final metrics collected", "completed")
+        else:
+            self._emit_progress("after", "Failed to collect final metrics", "warning")
 
         return prometheus_ok
 
@@ -245,7 +253,6 @@ class MetricsValidator:
         )
 
         # 1. Prometheus validation
-        self._emit_progress("validate", "Validating Prometheus metrics...", "running")
         prometheus_validation = await self._validate_prometheus(
             client_successful_requests,
             client_avg_ttft_ms,
@@ -256,11 +263,10 @@ class MetricsValidator:
             result.prometheus_available = True
             result.all_comparisons.extend(prometheus_validation.comparisons)
             result.all_warnings.extend(prometheus_validation.warnings)
-            status = "running" if prometheus_validation.passed else "warning"
+            status = "completed" if prometheus_validation.passed else "warning"
             self._emit_progress("validate", f"Prometheus: {'PASSED' if prometheus_validation.passed else 'FAILED'}", status)
 
         # 2. Docker log validation
-        self._emit_progress("validate", "Validating Docker logs...", "running")
         docker_validation = await self._validate_docker_logs(
             client_successful_requests,
             client_throughput,
@@ -270,7 +276,7 @@ class MetricsValidator:
             result.docker_available = True
             result.all_comparisons.extend(docker_validation.comparisons)
             result.all_warnings.extend(docker_validation.warnings)
-            status = "running" if docker_validation.passed else "warning"
+            status = "completed" if docker_validation.passed else "warning"
             self._emit_progress("validate", f"Docker logs: {'PASSED' if docker_validation.passed else 'FAILED'}", status)
 
         # 3. Calculate overall pass/fail

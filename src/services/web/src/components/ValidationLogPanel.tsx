@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { ChevronDown, ChevronRight, CheckCircle, AlertTriangle, Loader2, XCircle } from "lucide-react";
 import type { ValidationLogEntry } from "@/hooks/useBenchmarkProgress";
 
@@ -39,6 +39,18 @@ export function ValidationLogPanel({ logs, isRunning }: ValidationLogPanelProps)
     localStorage.setItem("validationLogPanelExpanded", String(newState));
   };
 
+  // 벤치마크가 완료되면 running 상태의 로그를 completed로 변환
+  const displayLogs = useMemo(() => {
+    if (isRunning) {
+      return logs;
+    }
+    // 벤치마크 완료 시, running 상태를 completed로 변환
+    return logs.map(log => ({
+      ...log,
+      status: log.status === "running" ? "completed" as const : log.status,
+    }));
+  }, [logs, isRunning]);
+
   // 상태에 따른 아이콘
   const getStatusIcon = (status: ValidationLogEntry["status"]) => {
     switch (status) {
@@ -75,8 +87,8 @@ export function ValidationLogPanel({ logs, isRunning }: ValidationLogPanelProps)
 
   // 전체 상태 계산
   const getOverallStatus = () => {
-    if (logs.length === 0) return null;
-    const lastLog = logs[logs.length - 1];
+    if (displayLogs.length === 0) return null;
+    const lastLog = displayLogs[displayLogs.length - 1];
     if (lastLog.status === "completed") return "passed";
     if (lastLog.status === "failed") return "failed";
     return "running";
@@ -84,7 +96,7 @@ export function ValidationLogPanel({ logs, isRunning }: ValidationLogPanelProps)
 
   const overallStatus = getOverallStatus();
 
-  if (!isRunning && logs.length === 0) {
+  if (!isRunning && displayLogs.length === 0) {
     return null;
   }
 
@@ -124,7 +136,7 @@ export function ValidationLogPanel({ logs, isRunning }: ValidationLogPanelProps)
           )}
         </div>
         <span className="text-sm text-gray-500 dark:text-gray-400">
-          {logs.length} logs
+          {displayLogs.length} logs
         </span>
       </div>
 
@@ -135,7 +147,7 @@ export function ValidationLogPanel({ logs, isRunning }: ValidationLogPanelProps)
           className="max-h-48 overflow-y-auto"
         >
           <div className="divide-y divide-gray-100 dark:divide-gray-700">
-            {logs.map((log, index) => (
+            {displayLogs.map((log, index) => (
               <div
                 key={`${log.step}-${log.timestamp}-${index}`}
                 className={`flex items-center gap-3 px-4 py-2 ${
@@ -167,7 +179,7 @@ export function ValidationLogPanel({ logs, isRunning }: ValidationLogPanelProps)
                 </span>
               </div>
             ))}
-            {logs.length === 0 && (
+            {displayLogs.length === 0 && (
               <div className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                 Validation 대기 중...
               </div>
